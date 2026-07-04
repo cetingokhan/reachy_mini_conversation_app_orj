@@ -25,7 +25,7 @@ COMMANDS = ["forward", "back", "stop", "center", "left1", "left2", "right1", "ri
 async def run_console(hub_name: str) -> None:
     """Connect to the hub over BLE, upload/start carhub.py, then relay typed commands."""
     print(f"Scanning for hub '{hub_name}'...")
-    device = await find_device(hub_name)
+    device = await find_device(hub_name, timeout=10.0)
     hub = PybricksHubBLE(device)
 
     print("Connecting...")

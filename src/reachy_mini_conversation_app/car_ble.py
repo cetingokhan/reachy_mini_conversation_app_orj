@@ -19,7 +19,7 @@ from reachy_mini_conversation_app.config import config
 logger = logging.getLogger(__name__)
 
 CAR_HUB_PROGRAM = Path(__file__).with_name("car_hub_program.py")
-BLE_SCAN_TIMEOUT_S = 10.0
+BLE_SCAN_TIMEOUT_S = 20.0
 
 
 class CarBleConnectionError(RuntimeError):
