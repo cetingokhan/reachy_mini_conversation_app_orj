@@ -15,7 +15,7 @@ from pybricksdev.ble import find_device
 from pybricksdev.connections.pybricks import PybricksHubBLE
 
 
-CARHUB_SCRIPT = os.path.join(os.path.dirname(__file__), "carhub.py")
+CARHUB_SCRIPT = os.path.join(os.path.dirname(__file__), "..", "reachy_mini_conversation_app", "car_hub_program.py")
 # ponytail: set to your hub's advertised name, or pass it as a CLI argument
 DEFAULT_HUB_NAME = "Pybricks Hub"
 

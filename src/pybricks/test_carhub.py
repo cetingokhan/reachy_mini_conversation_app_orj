@@ -1,6 +1,16 @@
-"""Self-check for carhub.py's command dispatch, no hub/BLE required."""
+"""Self-check for car_hub_program.py's command dispatch, no hub/BLE required."""
 
-import carhub
+import os
+import importlib.util
+
+
+_SPEC = importlib.util.spec_from_file_location(
+    "car_hub_program",
+    os.path.join(os.path.dirname(__file__), "..", "reachy_mini_conversation_app", "car_hub_program.py"),
+)
+assert _SPEC is not None and _SPEC.loader is not None
+carhub = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(carhub)
 
 
 def demo():

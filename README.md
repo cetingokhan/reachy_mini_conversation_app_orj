@@ -230,9 +230,10 @@ If no startup settings have been saved yet, you can still seed startup from the 
 Each profile should include `instructions.txt` (prompt text). If that file is missing or empty, the app logs a warning and falls back to `profiles/default/instructions.txt`. `greeting.txt` is optional and controls how the robot should start the conversation after the backend connects. `tools.txt` (list of allowed tools) is recommended. If missing for a non-default profile, the app falls back to `profiles/default/tools.txt`. Profiles can optionally contain custom tool implementations.
 
 **`car_driver`:** drives a LEGO SPIKE car chassis Reachy is mounted on, via the `drive_car`
-tool over BLE (see `src/pybricks/carhub.py` for the hub-side program, which must already be
-running on the hub). Set `LEGO_CAR_HUB_NAME` in `.env` if you have more than one Pybricks
-hub nearby; the BLE connection is established on first use and kept alive across tool calls.
+tool over BLE. The hub only needs to be powered on and advertising Pybricks BLE (no manual
+"run program" step needed): on first use, the app connects, uploads, and starts
+`car_hub_program.py` on the hub automatically, then keeps the connection alive across tool
+calls. Set `LEGO_CAR_HUB_NAME` in `.env` if you have more than one Pybricks hub nearby.
 
 **Startup greeting:**
 

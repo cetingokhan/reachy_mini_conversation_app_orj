@@ -30,8 +30,9 @@ dependencies = [
     "reachy-mini>=1.8.3",
     "mcp>=1.27.1",
 
-    #BLE (LEGO SPIKE car chassis, car_driver profile)
-    "bleak>=0.22",
+    #BLE (LEGO SPIKE car chassis, car_driver profile). pybricksdev also compiles/uploads
+    #car_hub_program.py to the hub over BLE, so the hub only needs to be powered on.
+    "pybricksdev>=1.0",
 ]
 
 [dependency-groups]
@@ -112,8 +113,9 @@ line-ending = "auto"
 python_version = "3.12"
 files = ["src/"]
 # src/pybricks is a standalone MicroPython/hub side-project (own venv, own runtime),
-# not part of the strict-typed main app.
-exclude = ["^src/pybricks/"]
+# not part of the strict-typed main app. car_hub_program.py is bundled with the main
+# app for auto-upload but is also MicroPython-target code (foreign usys/pybricks imports).
+exclude = ["^src/pybricks/", "^src/reachy_mini_conversation_app/car_hub_program\\.py$"]
 ignore_missing_imports = true
 strict = true
 show_error_codes = true
