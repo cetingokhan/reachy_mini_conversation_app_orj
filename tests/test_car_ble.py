@@ -24,7 +24,7 @@ async def test_ensure_connected_reuses_existing_connection() -> None:
     client = CarBleClient()
 
     with (
-        patch("reachy_mini_conversation_app.car_ble.find_device", new=AsyncMock()) as find_mock,
+        patch("reachy_mini_conversation_app.car_ble._find_hub_device", new=AsyncMock()) as find_mock,
         patch("reachy_mini_conversation_app.car_ble.PybricksHubBLE") as hub_cls,
     ):
         find_mock.return_value = MagicMock()
@@ -47,7 +47,7 @@ async def test_ensure_connected_reconnects_after_disconnect() -> None:
     client = CarBleClient()
 
     with (
-        patch("reachy_mini_conversation_app.car_ble.find_device", new=AsyncMock()) as find_mock,
+        patch("reachy_mini_conversation_app.car_ble._find_hub_device", new=AsyncMock()) as find_mock,
         patch("reachy_mini_conversation_app.car_ble.PybricksHubBLE") as hub_cls,
     ):
         find_mock.return_value = MagicMock()
@@ -68,7 +68,7 @@ async def test_ensure_connected_raises_when_hub_not_found() -> None:
     """No matching BLE device should raise a clear connection error."""
     client = CarBleClient()
 
-    with patch("reachy_mini_conversation_app.car_ble.find_device", new=AsyncMock()) as find_mock:
+    with patch("reachy_mini_conversation_app.car_ble._find_hub_device", new=AsyncMock()) as find_mock:
         find_mock.side_effect = TimeoutError
 
         with pytest.raises(CarBleConnectionError):
@@ -81,7 +81,7 @@ async def test_send_command_writes_stdin_line() -> None:
     client = CarBleClient()
 
     with (
-        patch("reachy_mini_conversation_app.car_ble.find_device", new=AsyncMock()) as find_mock,
+        patch("reachy_mini_conversation_app.car_ble._find_hub_device", new=AsyncMock()) as find_mock,
         patch("reachy_mini_conversation_app.car_ble.PybricksHubBLE") as hub_cls,
     ):
         find_mock.return_value = MagicMock()
@@ -99,7 +99,7 @@ async def test_ensure_connected_uploads_and_starts_car_hub_program() -> None:
     client = CarBleClient()
 
     with (
-        patch("reachy_mini_conversation_app.car_ble.find_device", new=AsyncMock()) as find_mock,
+        patch("reachy_mini_conversation_app.car_ble._find_hub_device", new=AsyncMock()) as find_mock,
         patch("reachy_mini_conversation_app.car_ble.PybricksHubBLE") as hub_cls,
     ):
         find_mock.return_value = MagicMock()

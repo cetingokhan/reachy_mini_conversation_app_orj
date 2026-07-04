@@ -11,7 +11,10 @@ import os
 import sys
 import asyncio
 
-from pybricksdev.ble import find_device
+from bleak import BleakScanner
+from bleak.backends.device import BLEDevice
+from bleak.backends.scanner import AdvertisementData
+from pybricksdev.ble.pybricks import PYBRICKS_SERVICE_UUID
 from pybricksdev.connections.pybricks import PybricksHubBLE
 
 
@@ -22,10 +25,29 @@ DEFAULT_HUB_NAME = "Pybricks Hub"
 COMMANDS = ["forward", "back", "stop", "center", "left1", "left2", "right1", "right2", "quit"]
 
 
+async def find_hub_device(hub_name: str, timeout: float = 10.0) -> BLEDevice:
+    """Scan for a Pybricks-advertising device.
+
+    pybricksdev's own ``find_device`` requires a local name in the advertisement, but this hub
+    only reveals its name via GATT after connecting, so that helper always times out. Match on
+    the Pybricks service UUID instead, and only enforce hub_name when a name is already cached.
+    """
+
+    def _matches(d: BLEDevice, adv: AdvertisementData) -> bool:
+        if PYBRICKS_SERVICE_UUID not in adv.service_uuids:
+            return False
+        return d.name is None or d.name == hub_name
+
+    device = await BleakScanner.find_device_by_filter(_matches, timeout=timeout)
+    if device is None:
+        raise TimeoutError(f"No car hub found over BLE (name={hub_name!r})")
+    return device
+
+
 async def run_console(hub_name: str) -> None:
     """Connect to the hub over BLE, upload/start carhub.py, then relay typed commands."""
     print(f"Scanning for hub '{hub_name}'...")
-    device = await find_device(hub_name, timeout=10.0)
+    device = await find_hub_device(hub_name)
     hub = PybricksHubBLE(device)
 
     print("Connecting...")
