@@ -15,3 +15,12 @@ class SystemTool(Enum):
 
     TASK_STATUS = "task_status"
     TASK_CANCEL = "task_cancel"
+
+
+AZURE_DEVOPS_TOOL_NAMES = (
+    "azure_devops_clone_repo",
+    "azure_devops_create_branch",
+    "azure_devops_commit_and_push",
+    "azure_devops_create_pr",
+    "azure_devops_trigger_codedev",
+)

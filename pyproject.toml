@@ -29,6 +29,9 @@ dependencies = [
     "reachy_mini_toolbox",
     "reachy-mini>=1.8.3",
     "mcp>=1.27.1",
+
+    #BLE (LEGO SPIKE car chassis, car_driver profile)
+    "bleak>=0.22",
 ]
 
 [dependency-groups]
@@ -108,6 +111,9 @@ line-ending = "auto"
 [tool.mypy]
 python_version = "3.12"
 files = ["src/"]
+# src/pybricks is a standalone MicroPython/hub side-project (own venv, own runtime),
+# not part of the strict-typed main app.
+exclude = ["^src/pybricks/"]
 ignore_missing_imports = true
 strict = true
 show_error_codes = true

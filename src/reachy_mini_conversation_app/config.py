@@ -95,6 +95,9 @@ DEFAULT_BACKEND_PROVIDER = HF_BACKEND
 HF_REALTIME_CONNECTION_MODE_ENV = "HF_REALTIME_CONNECTION_MODE"
 HF_REALTIME_WS_URL_ENV = "HF_REALTIME_WS_URL"
 REALTIME_TRANSCRIPTION_LANGUAGE_ENV = "REALTIME_TRANSCRIPTION_LANGUAGE"
+AZURE_DEVOPS_ORG_ENV = "AZURE_DEVOPS_ORG"
+AZURE_DEVOPS_PAT_ENV = "AZURE_DEVOPS_PAT"
+GITHUB_COPILOT_CLI_TOKEN_ENV = "GITHUB_COPILOT_CLI_TOKEN"
 HF_LOCAL_CONNECTION_MODE = "local"
 HF_DEPLOYED_CONNECTION_MODE = "deployed"
 HF_REALTIME_SESSION_PROXY_URL = "https://pollen-robotics-reachy-mini-realtime-url.hf.space/session"
@@ -197,6 +200,20 @@ def _env_flag(name: str, default: bool = False) -> bool:
 
     logger.warning("Invalid boolean value for %s=%r, using default=%s", name, raw, default)
     return default
+
+
+def _optional_env_value(name: str) -> str | None:
+    """Return a stripped optional environment value, or None when unset."""
+    value = (os.getenv(name) or "").strip()
+    return value or None
+
+
+def _optional_auth_env_value(name: str) -> str | None:
+    """Return an optional auth environment value and warn when it is missing."""
+    value = _optional_env_value(name)
+    if value is None:
+        logger.warning("Missing %s", name)
+    return value
 
 
 APP_TIMEOUT_MINUTES_ENV = "REACHY_MINI_APP_TIMEOUT_MINUTES"
@@ -377,6 +394,9 @@ class Config:
     # Required (one of these depending on BACKEND_PROVIDER)
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # The key is downloaded in console.py if needed
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    AZURE_DEVOPS_ORG: str | None = _optional_env_value(AZURE_DEVOPS_ORG_ENV)
+    AZURE_DEVOPS_PAT: str | None = _optional_auth_env_value(AZURE_DEVOPS_PAT_ENV)
+    GITHUB_COPILOT_CLI_TOKEN: str | None = _optional_auth_env_value(GITHUB_COPILOT_CLI_TOKEN_ENV)
 
     # Optional
     BACKEND_PROVIDER = _normalize_backend_provider(
@@ -392,6 +412,9 @@ class Config:
     HF_REALTIME_WS_URL = os.getenv(HF_REALTIME_WS_URL_ENV)
     REALTIME_TRANSCRIPTION_LANGUAGE = _normalize_transcription_language(os.getenv(REALTIME_TRANSCRIPTION_LANGUAGE_ENV))
     HF_TOKEN = os.getenv("HF_TOKEN")  # Optional, falls back to hf auth login if not set
+    # BLE device name of the LEGO SPIKE hub driving the car chassis; None matches the first
+    # device advertising the Pybricks service.
+    LEGO_CAR_HUB_NAME: str | None = os.getenv("LEGO_CAR_HUB_NAME")
 
     logger.debug(
         "Backend provider: %s, Model: %s, HF mode: %s, HF session URL set: %s, HF direct URL set: %s",
@@ -492,6 +515,9 @@ def refresh_runtime_config_from_env() -> None:
     """Refresh mutable runtime config fields from the current environment."""
     config.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     config.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    config.AZURE_DEVOPS_ORG = _optional_env_value(AZURE_DEVOPS_ORG_ENV)
+    config.AZURE_DEVOPS_PAT = _optional_auth_env_value(AZURE_DEVOPS_PAT_ENV)
+    config.GITHUB_COPILOT_CLI_TOKEN = _optional_auth_env_value(GITHUB_COPILOT_CLI_TOKEN_ENV)
     config.BACKEND_PROVIDER = _normalize_backend_provider(
         os.getenv("BACKEND_PROVIDER"),
         os.getenv("MODEL_NAME"),
@@ -507,6 +533,7 @@ def refresh_runtime_config_from_env() -> None:
         os.getenv(REALTIME_TRANSCRIPTION_LANGUAGE_ENV)
     )
     config.HF_TOKEN = os.getenv("HF_TOKEN")
+    config.LEGO_CAR_HUB_NAME = os.getenv("LEGO_CAR_HUB_NAME")
     config.REACHY_MINI_CUSTOM_PROFILE = LOCKED_PROFILE or os.getenv("REACHY_MINI_CUSTOM_PROFILE")
 
 

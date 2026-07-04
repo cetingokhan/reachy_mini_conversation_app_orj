@@ -1,0 +1,7 @@
+camera
+move_head
+drive_car
+go_to_sleep
+remember
+forget
+idle_do_nothing

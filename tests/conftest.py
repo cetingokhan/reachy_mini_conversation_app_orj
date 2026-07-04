@@ -2,6 +2,8 @@
 
 import os
 import sys
+import importlib.util
+from types import ModuleType
 from pathlib import Path
 
 
@@ -18,3 +20,9 @@ os.environ["REACHY_MINI_SKIP_DOTENV"] = "1"
 os.environ.pop("REACHY_MINI_CUSTOM_PROFILE", None)
 os.environ.pop("REACHY_MINI_EXTERNAL_PROFILES_DIRECTORY", None)
 os.environ.pop("REACHY_MINI_EXTERNAL_TOOLS_DIRECTORY", None)
+
+
+if importlib.util.find_spec("reachy_mini") is None:
+    reachy_mini_stub = ModuleType("reachy_mini")
+    reachy_mini_stub.ReachyMini = object
+    sys.modules["reachy_mini"] = reachy_mini_stub

@@ -26,6 +26,7 @@ Conversational app for the Reachy Mini robot combining realtime voice backends a
 - [Running the app](#running-the-app)
 - [LLM tools](#llm-tools-exposed-to-the-assistant)
 - [Advanced features](#advanced-features)
+- [Peer-to-Peer Development Tools](#peer-to-peer-development-tools)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -116,6 +117,7 @@ Copy `.env.example` to `.env` when you want to switch backends, provide API keys
 | `HF_REALTIME_WS_URL` | Direct websocket endpoint for your own Hugging Face backend. Accepts either a base URL like `ws://127.0.0.1:8765/v1` or the full websocket URL `ws://127.0.0.1:8765/v1/realtime`. Used when `HF_REALTIME_CONNECTION_MODE=local`. |
 | `HF_TOKEN` | Optional token for Hugging Face access (for gated/private assets). |
 | `REACHY_MINI_APP_TIMEOUT_MINUTES` | Minutes of inactivity before Reachy goes to sleep and the app stops. Defaults to `1440` (one day); set to `0` to disable. |
+| `LEGO_CAR_HUB_NAME` | BLE device name of the LEGO SPIKE hub for the `car_driver` profile. Leave unset to connect to the first device advertising the Pybricks BLE service. |
 
 ### Hugging Face Connection Modes
 
@@ -226,6 +228,11 @@ For normal usage, select a profile from the UI and save it for startup. That sel
 If no startup settings have been saved yet, you can still seed startup from the environment with `REACHY_MINI_CUSTOM_PROFILE=<name>` to load `profiles/<name>/`. If neither is set, the `default` profile is used.
 
 Each profile should include `instructions.txt` (prompt text). If that file is missing or empty, the app logs a warning and falls back to `profiles/default/instructions.txt`. `greeting.txt` is optional and controls how the robot should start the conversation after the backend connects. `tools.txt` (list of allowed tools) is recommended. If missing for a non-default profile, the app falls back to `profiles/default/tools.txt`. Profiles can optionally contain custom tool implementations.
+
+**`car_driver`:** drives a LEGO SPIKE car chassis Reachy is mounted on, via the `drive_car`
+tool over BLE (see `src/pybricks/carhub.py` for the hub-side program, which must already be
+running on the hub). Set `LEGO_CAR_HUB_NAME` in `.env` if you have more than one Pybricks
+hub nearby; the BLE connection is established on first use and kept alive across tool calls.
 
 **Startup greeting:**
 
@@ -372,6 +379,50 @@ reachy-mini-conversation-app --robot-name <name>
 `<name>` must match the daemon's `--robot-name` value so the app connects to the correct robot.
 
 </details>
+
+## Peer-to-Peer Development Tools
+
+The app can expose Azure DevOps peer-development tools so a Reachy Mini agent can coordinate asynchronous code work across other repositories. This lets the main conversation stay lightweight while a Copilot CLI sub-agent handles the coding loop in the background.
+
+### Available tools
+
+- `azure_devops_clone_repo` - Clone repositories from Azure DevOps into a local workspace.
+- `azure_devops_create_branch` - Create and check out a feature branch for the task.
+- `azure_devops_commit_and_push` - Stage changes, commit them, and push the branch upstream.
+- `azure_devops_create_pr` - Create a pull request from the feature branch back to the target branch.
+- `azure_devops_trigger_codedev` - Spawn an asynchronous Copilot CLI sub-agent for code generation.
+
+### Environment variables
+
+Add these values to your `.env` file:
+
+```env
+AZURE_DEVOPS_ORG=your-organization
+AZURE_DEVOPS_PAT=your-personal-access-token
+GITHUB_COPILOT_CLI_TOKEN=your-copilot-cli-token
+```
+
+- `AZURE_DEVOPS_ORG` - Your Azure DevOps organization.
+- `AZURE_DEVOPS_PAT` - Personal Access Token used for Azure DevOps git and PR operations. Keep it secret and store it in `.env`, not in code.
+- `GITHUB_COPILOT_CLI_TOKEN` - Optional token for Copilot CLI sub-agent triggering.
+
+### Example workflow
+
+When Reachy Mini receives a request such as "add a new feature", the tool flow can look like this:
+
+1. Call `azure_devops_clone_repo` to clone the target repository.
+2. Call `azure_devops_create_branch` to create a feature branch from the development baseline.
+3. Call `azure_devops_trigger_codedev` to start an asynchronous Copilot CLI sub-agent with the implementation task.
+4. The sub-agent pulls the repository, makes the code changes, commits them, and pushes the branch.
+5. Call `azure_devops_create_pr` to open a pull request from the feature branch back to `development`.
+
+```text
+User request -> clone repo -> create branch -> trigger async sub-agent
+            -> sub-agent edits/commits/pushes -> create PR
+```
+
+> [!NOTE]
+> Because the code-writing sub-agent runs asynchronously through Copilot CLI, the main Reachy Mini agent does not need to spend its own conversation window on the full edit loop. That reduces token consumption in the main agent while keeping the development workflow coordinated.
 
 ## Contributing
 
