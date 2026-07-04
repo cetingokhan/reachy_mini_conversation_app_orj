@@ -24,13 +24,20 @@ STEERING_SPEED = 300  # deg/s
 
 # ponytail: calibrate speed/duration for the desired travel distance per step
 DRIVE_SPEED = 500  # deg/s
-DRIVE_STEP_MS = 1000  # duration of one forward/back step
+DRIVE_STEP_MS = 1000  # default duration of one forward/back/turn step
+
+TURN_PRESETS = {
+    "turn_left1": "left1",
+    "turn_left2": "left2",
+    "turn_right1": "right1",
+    "turn_right2": "right2",
+}
 
 
-def drive(speed):
+def drive(speed, duration_ms):
     """Run both drive motors at the given speed for one timed step."""
-    motor_back_left.run_time(speed, DRIVE_STEP_MS, wait=False)
-    motor_back_right.run_time(speed, DRIVE_STEP_MS, wait=True)
+    motor_back_left.run_time(speed, duration_ms, wait=False)
+    motor_back_right.run_time(speed, duration_ms, wait=True)
 
 
 def stop_drive():
@@ -44,16 +51,35 @@ def steer(preset):
     motor_front_steering_wheel.run_target(STEERING_SPEED, STEERING_ANGLES[preset])
 
 
+def turn(preset, duration_ms):
+    """Steer to the given preset angle and drive forward, so the chassis actually arcs."""
+    steer(preset)
+    drive(-DRIVE_SPEED, duration_ms)
+
+
 def dispatch(command):
-    """Run one command, returning the ack line to send back over BLE."""
-    if command == "forward":
-        drive(-DRIVE_SPEED)
-    elif command == "back":
-        drive(DRIVE_SPEED)
-    elif command == "stop":
+    """Run one command (optionally "name duration_ms"), returning the ack line sent back over BLE."""
+    parts = command.split()
+    if not parts:
+        return "err empty cmd"
+    name = parts[0]
+    duration_ms = DRIVE_STEP_MS
+    if len(parts) > 1:
+        try:
+            duration_ms = int(parts[1])
+        except ValueError:
+            return "err bad duration: " + command
+
+    if name == "forward":
+        drive(-DRIVE_SPEED, duration_ms)
+    elif name == "back":
+        drive(DRIVE_SPEED, duration_ms)
+    elif name == "stop":
         stop_drive()
-    elif command in STEERING_ANGLES:
-        steer(command)
+    elif name in STEERING_ANGLES:
+        steer(name)
+    elif name in TURN_PRESETS:
+        turn(TURN_PRESETS[name], duration_ms)
     else:
         return "err unknown cmd: " + command
     return "ok " + command

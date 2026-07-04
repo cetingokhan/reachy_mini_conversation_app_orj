@@ -2,6 +2,7 @@ import base64
 import logging
 from typing import Any, Dict
 
+from reachy_mini_conversation_app import car_state
 from reachy_mini_conversation_app.tools.core_tools import Tool, ToolDependencies
 from reachy_mini_conversation_app.camera_frame_encoding import encode_bgr_frame_as_jpeg
 
@@ -44,4 +45,5 @@ class Camera(Tool):
             return {"error": "No frame available"}
 
         jpeg_bytes = encode_bgr_frame_as_jpeg(frame)
+        car_state.reset_after_camera_check()
         return {"b64_im": base64.b64encode(jpeg_bytes).decode("utf-8")}

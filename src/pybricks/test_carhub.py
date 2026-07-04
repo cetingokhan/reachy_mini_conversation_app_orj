@@ -20,7 +20,13 @@ def demo():
     assert carhub.dispatch("stop") == "ok stop"
     for preset in carhub.STEERING_ANGLES:
         assert carhub.dispatch(preset) == "ok " + preset
+    assert carhub.dispatch("forward 1500") == "ok forward 1500"
+    assert carhub.dispatch("back 500") == "ok back 500"
+    for turn_cmd in carhub.TURN_PRESETS:
+        assert carhub.dispatch(turn_cmd) == "ok " + turn_cmd
+        assert carhub.dispatch(turn_cmd + " 2000") == "ok " + turn_cmd + " 2000"
     assert carhub.dispatch("sideways").startswith("err")
+    assert carhub.dispatch("forward notanumber").startswith("err")
 
 
 if __name__ == "__main__":

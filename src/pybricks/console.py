@@ -4,7 +4,8 @@ Usage:
     python console.py [hub-name]
 
 Type commands and press Enter. Same command set as carhub.py:
-forward, back, stop, center, left1, left2, right1, right2, quit
+forward, back, stop, center, turn_left1, turn_left2, turn_right1, turn_right2, quit
+Append a duration in ms to scale the step, e.g. "forward 1500".
 """
 
 import os
@@ -22,7 +23,7 @@ CARHUB_SCRIPT = os.path.join(os.path.dirname(__file__), "..", "reachy_mini_conve
 # ponytail: set to your hub's advertised name, or pass it as a CLI argument
 DEFAULT_HUB_NAME = "Pybricks Hub"
 
-COMMANDS = ["forward", "back", "stop", "center", "left1", "left2", "right1", "right2", "quit"]
+COMMANDS = ["forward", "back", "stop", "center", "turn_left1", "turn_left2", "turn_right1", "turn_right2", "quit"]
 
 
 async def find_hub_device(hub_name: str, timeout: float = 10.0) -> BLEDevice:
@@ -61,7 +62,7 @@ async def run_console(hub_name: str) -> None:
             command = (await asyncio.to_thread(input, "> ")).strip()
             if not command:
                 continue
-            if command not in COMMANDS:
+            if command not in COMMANDS and command.split()[0] not in COMMANDS:
                 print(f"unknown command: {command}")
                 continue
             await hub.write_line(command)
