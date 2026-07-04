@@ -47,9 +47,9 @@ def steer(preset):
 def dispatch(command):
     """Run one command, returning the ack line to send back over BLE."""
     if command == "forward":
-        drive(DRIVE_SPEED)
-    elif command == "back":
         drive(-DRIVE_SPEED)
+    elif command == "back":
+        drive(DRIVE_SPEED)
     elif command == "stop":
         stop_drive()
     elif command in STEERING_ANGLES:
