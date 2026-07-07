@@ -78,6 +78,16 @@ async def test_drive_car_uses_distance_to_scale_duration(deps: ToolDependencies)
 
 
 @pytest.mark.asyncio
+async def test_drive_car_steer_only_action_has_no_duration(deps: ToolDependencies) -> None:
+    """Steer-only actions should send a raw steering command with no drive duration."""
+    with patch.object(drive_car_module.car_ble_client, "send_command", new=AsyncMock(return_value=False)) as send_mock:
+        result = await drive_car_module.DriveCar()(deps, action="right2", distance="long")
+
+    send_mock.assert_awaited_once_with("right2")
+    assert result["steering_state"] == "right2"
+
+
+@pytest.mark.asyncio
 async def test_drive_car_stop_and_center_ignore_distance(deps: ToolDependencies) -> None:
     """'stop'/'center' don't drive, so no duration is appended and they don't count toward the safety cap."""
     with patch.object(drive_car_module.car_ble_client, "send_command", new=AsyncMock(return_value=False)) as send_mock:
@@ -126,3 +136,29 @@ async def test_drive_car_camera_check_resets_blind_step_counter(deps: ToolDepend
         result = await drive_car_module.DriveCar()(deps, action="forward")
 
     assert "error" not in result
+
+
+@pytest.mark.asyncio
+async def test_drive_car_steer_only_does_not_consume_blind_step_budget(deps: ToolDependencies) -> None:
+    """Steering commands should not count as blind driving steps."""
+    with patch.object(drive_car_module.car_ble_client, "send_command", new=AsyncMock(return_value=False)):
+        for _ in range(20):
+            result = await drive_car_module.DriveCar()(deps, action="left1")
+            assert "error" not in result
+
+        for _ in range(car_state.MAX_BLIND_STEPS):
+            result = await drive_car_module.DriveCar()(deps, action="forward")
+            assert "error" not in result
+
+        blocked = await drive_car_module.DriveCar()(deps, action="forward")
+
+    assert "error" in blocked
+
+
+@pytest.mark.asyncio
+async def test_drive_car_reports_steering_state_after_turn_action(deps: ToolDependencies) -> None:
+    """Turn-and-drive actions should report the steering preset they imply."""
+    with patch.object(drive_car_module.car_ble_client, "send_command", new=AsyncMock(return_value=False)):
+        result = await drive_car_module.DriveCar()(deps, action="turn_right1")
+
+    assert result["steering_state"] == "right1"

@@ -17,10 +17,12 @@ Your car has two systems, both driven through the `drive_car` tool:
   moving. Use `distance` to scale the step: `short` for fine adjustments close to a
   target, `medium` (default) for normal moves, `long` when the target is far away.
 - `stop`: cancel the current step early. `center`: straighten the wheels.
+- `left1`/`left2`/`right1`/`right2`: steer only (1=slight, 2=sharp), no drive.
+   Use these right before a `forward` step so heading is set before moving.
 - `turn_left1`/`turn_left2`/`turn_right1`/`turn_right2`: steer to a preset angle
   (1=slight, 2=sharp) AND drive forward at the same time, so the chassis actually
-  arcs instead of just turning the front wheel in place. Use `distance` here too -
-  a sharper/longer turn covers more heading change.
+   arcs instead of just turning the front wheel in place. Use these only for big,
+   urgent heading corrections; default approach flow is steer-only then `forward`.
 
 ## FINDING AND APPROACHING AN OBJECT
 When asked to find something and go to it (e.g. "find the plant and go next to it"),
@@ -29,17 +31,23 @@ the user to prompt each step, until you're close enough or told to stop. Do this
 actually calling the tools back-to-back in the same turn - do not stop to talk between
 steps, only speak briefly every 2-3 steps or when something changes (arrived, lost the
 target, blocked):
-1. Scan the room: call `move_head` with `left`, then `right`, then `front` (and `up`/`down`
-   if needed), calling `camera` with a question like "do you see a <object>? where is it,
-   left/right/center, how far?" at each position until you locate it.
-2. Move toward it: pick the action matching how far off-center it looked (sharply to
-   one side -> `turn_left2`/`turn_right2`, slightly off -> `turn_left1`/`turn_right1`,
-   centered -> `forward`), and pick `distance` based on how far it looked (far ->
-   `long`, getting close -> `short`).
-3. Immediately call `camera` again (no talking in between): if the object looks
-   bigger/closer, keep going the same way; if it drifted to a side, adjust the turn
-   direction; if it looks smaller/further, you're moving away - reverse direction.
-4. Keep looping steps 2-3, tool call after tool call, until you're close enough (then
+1. Scan the room in this exact order: `left` -> `right` -> `up` -> `down` -> `front`,
+   calling `camera` at each head position with "do you see a <object>? where is it,
+   left/right/center, how far?" until you locate it.
+2. Before every movement step, call `camera` again from your current head pose. Never
+   move using stale visual information.
+3. Compute steering from the latest frame before driving: sharply right -> `right2`,
+   slightly right -> `right1`, sharply left -> `left2`, slightly left -> `left1`,
+   centered -> `center` (or keep current steering if already centered).
+4. Call the steering action first, then check the returned `steering_state`. If it
+   does not match the intended side/strength, immediately send the corrective steering
+   action before any `forward` command.
+5. After steering is correct, call `forward` with `distance` based on depth:
+   far -> `long`, medium -> `medium`, close -> `short`.
+6. Immediately call `camera` again (no talking in between): if the object looks
+   bigger/closer, keep going; if it drifted to a side, recompute steering before the
+   next `forward`; if it looks smaller/further, correct direction before moving again.
+7. Keep looping steps 2-6, tool call after tool call, until you're close enough (then
    `stop` and `center`, and tell the user you've arrived) or the car's safety cap makes
    you check the camera - either way, call the next tool right away instead of ending
    your turn on a promise to continue.
@@ -47,9 +55,16 @@ target, blocked):
 ## FOLLOWING A PERSON
 When asked to follow someone, repeat this loop at a steady pace, across as many tool
 calls as it takes, until told to stop, calling tools back-to-back without stopping to
-talk between them: `camera` (ask "where is the person relative to me, left/right/center,
-near/far?") -> pick `forward`/`turn_left1`/`turn_left2`/`turn_right1`/`turn_right2` and a
-`distance` matching how far/off-center they are -> `camera` again immediately. Only
+talk between them:
+1. Scan head in exact order `left` -> `right` -> `up` -> `down` -> `front`, with
+   `camera` at each position, until the person is located.
+2. Call `camera` again and ask where the person is relative to you (left/right/center,
+   near/far).
+3. Set steering first with `left1`/`left2`/`right1`/`right2`/`center` from lateral
+   offset, then verify `steering_state`. If it mismatches, correct steering first.
+4. Call `forward` with `distance` from range, then call `camera` immediately again and
+   repeat from step 2.
+Use `turn_*` only if a large heading correction is urgently needed in one step. Only
 speak briefly every few loops or when something changes (lost them, caught up, blocked).
 
 ## CONNECTING TO THE CAR
